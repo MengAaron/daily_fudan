@@ -1,4 +1,5 @@
 import time
+import random
 from json import loads as json_loads
 from os import path as os_path
 from sys import exit as sys_exit
@@ -193,6 +194,12 @@ def get_account():
     return uid, psw
 
 if __name__ == '__main__':
+    # 随机等待
+    a = random.randint(0, 600)
+    logging.info(f"Sleep {a} seconds...")
+    time.sleep(a)
+    logging.info(f'Time: {time.asctime(time.localtime())}.')
+
     uid, psw = get_account()
     # logging.debug("ACCOUNT：" + uid + psw)
     zlapp_login = 'https://uis.fudan.edu.cn/authserver/login?' \
