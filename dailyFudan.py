@@ -8,7 +8,7 @@ from sys import argv as sys_argv
 from lxml import etree
 from requests import session
 import logging
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
 
@@ -124,11 +124,12 @@ class Zlapp(Fudan):
 
     def check(self):
         """
-        检查
+        检查是否已提交
         """
         logging.debug("检测是否已提交")
         get_info = self.session.get(
                 'https://zlapp.fudan.edu.cn/ncov/wap/fudan/get-info')
+        logging.debug(f"get_info: {get_info}")
         last_info = get_info.json()
 
         logging.info("上一次提交日期为: %s " % last_info["d"]["info"]["date"])
@@ -143,7 +144,7 @@ class Zlapp(Fudan):
 
         if last_info["d"]["info"]["date"] == today:
             logging.info("今日已提交")
-            self.close()
+            self.close()      # 若已提交，登出
         else:
             logging.info("未提交")
             self.last_info = last_info["d"]["info"]
@@ -182,7 +183,6 @@ class Zlapp(Fudan):
                 data=self.last_info,
                 headers=headers,
                 allow_redirects=False)
-
         save_msg = json_loads(save.text)["m"]
         logging.info(save_msg)
 
@@ -195,10 +195,10 @@ def get_account():
 
 if __name__ == '__main__':
     # 随机等待
-    a = random.randint(0, 600)
-    logging.info(f"Sleep {a} seconds...")
-    time.sleep(a)
-    logging.info(f'Time: {time.asctime(time.localtime())}.')
+    # a = random.randint(0, 600)
+    # logging.info(f"Sleep {a} seconds...")
+    # time.sleep(a)
+    # logging.info(f'Time: {time.asctime(time.localtime())}.')
 
     uid, psw = get_account()
     # logging.debug("ACCOUNT：" + uid + psw)
@@ -208,6 +208,11 @@ if __name__ == '__main__':
     daily_fudan.login()
 
     daily_fudan.check()
+    # 如果用 try 包裹，程序的 robustness 更好，但是出错了也就无法基于 GitHub Action 检查
+    # try:
+    #     daily_fudan.checkin()
+    # except Exception as e:
+    #     logging.info(e)
     daily_fudan.checkin()
     # 再检查一遍
     daily_fudan.check()
