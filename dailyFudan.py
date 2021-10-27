@@ -7,6 +7,7 @@ from sys import argv as sys_argv
 
 from lxml import etree
 from requests import session
+import ddddocr
 import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
@@ -129,7 +130,7 @@ class Zlapp(Fudan):
         logging.debug("检测是否已提交")
         get_info = self.session.get(
                 'https://zlapp.fudan.edu.cn/ncov/wap/fudan/get-info')
-        logging.debug(f"get_info: {get_info}")
+        # logging.debug(f"get_info: {get_info}")
         last_info = get_info.json()
 
         logging.info("上一次提交日期为: %s " % last_info["d"]["info"]["date"])
@@ -147,7 +148,7 @@ class Zlapp(Fudan):
             self.close()      # 若已提交，登出
         else:
             logging.info("未提交")
-            self.last_info = last_info["d"]["info"]
+        self.last_info = last_info["d"]["info"]
 
     def checkin(self):
         """
@@ -167,13 +168,22 @@ class Zlapp(Fudan):
         province = geo_api_info["addressComponent"].get("province", "")
         city = geo_api_info["addressComponent"].get("city", "") or province
         district = geo_api_info["addressComponent"].get("district", "")
+
+        # 获取验证码；效果还不错，懒得写重复了
+        res_code = self.session.get("https://zlapp.fudan.edu.cn/backend/default/code")
+        ocr = ddddocr.DdddOcr()
+        code_orc_result = ocr.classification(res_code.content)
+
         self.last_info.update(
                 {
                     "tw"      : "13",
                     "province": province,
                     "city"    : city,
                     "area"    : " ".join(set((province, city, district))),
-                    "ismoved" : 0
+                    "ismoved" : 0,
+
+                    'sfzx'    : 1,      # needed for code
+                    "code"    : code_orc_result
                 }
         )
         # logging.debug(self.last_info)
@@ -202,13 +212,12 @@ if __name__ == '__main__':
 
     uid, psw = get_account()
     # logging.debug("ACCOUNT：" + uid + psw)
-    zlapp_login = 'https://uis.fudan.edu.cn/authserver/login?' \
-                  'service=https://zlapp.fudan.edu.cn/site/ncov/fudanDaily'
+    zlapp_login = 'https://uis.fudan.edu.cn/authserver/login?service=https://zlapp.fudan.edu.cn/site/ncov/fudanDaily'
     daily_fudan = Zlapp(uid, psw, url_login=zlapp_login)
     daily_fudan.login()
 
     daily_fudan.check()
-    # 如果用 try 包裹，程序的 robustness 更好，但是出错了也就无法基于 GitHub Action 检查
+    # 如果用 try 包裹，程序出错了 GitHub Action 不会发邮件了
     # try:
     #     daily_fudan.checkin()
     # except Exception as e:
