@@ -142,13 +142,15 @@ class Zlapp(Fudan):
         # logging.debug("上一次提交GPS为", position["position"])
 
         today = time.strftime("%Y%m%d", time.localtime())
-
+        self.last_info = last_info["d"]["info"]
         if last_info["d"]["info"]["date"] == today:
             logging.info("今日已提交")
             self.close()      # 若已提交，登出
+            return True
         else:
             logging.info("未提交")
-        self.last_info = last_info["d"]["info"]
+            return False
+        
 
     def checkin(self):
         """
@@ -169,7 +171,7 @@ class Zlapp(Fudan):
         city = geo_api_info["addressComponent"].get("city", "") or province
         district = geo_api_info["addressComponent"].get("district", "")
 
-        # 获取验证码；效果还不错，懒得写重复了
+        # 获取验证码
         res_code = self.session.get("https://zlapp.fudan.edu.cn/backend/default/code")
         ocr = ddddocr.DdddOcr()
         code_orc_result = ocr.classification(res_code.content)
@@ -216,14 +218,18 @@ if __name__ == '__main__':
     daily_fudan = Zlapp(uid, psw, url_login=zlapp_login)
     daily_fudan.login()
 
-    daily_fudan.check()
     # 如果用 try 包裹，程序出错了 GitHub Action 不会发邮件了
     # try:
     #     daily_fudan.checkin()
     # except Exception as e:
     #     logging.info(e)
-    daily_fudan.checkin()
-    # 再检查一遍
-    daily_fudan.check()
+    count = 0
+    while daily_fudan.check()==False and count<5:
+        daily_fudan.checkin()
+        count += 1
+    # # 再检查一遍
+    # daily_fudan.check()
 
     daily_fudan.close()
+    if count >= 5:
+        sys_exit(5)
