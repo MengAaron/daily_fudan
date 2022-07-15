@@ -1,4 +1,4 @@
-name: "Daily Fudan - new"
+name: "Daily Fudan"
 
 on:
   schedule:
