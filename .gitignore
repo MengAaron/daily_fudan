@@ -1,8 +1,9 @@
-.DS_Store
 # Default ignored files
 .idea
 .idea/
 .vscode/
+tmp/
+
 _reshape/.idea/
 account
 /get-info.txt
