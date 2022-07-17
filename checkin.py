@@ -27,7 +27,7 @@ class Checkin:
             headers = headers, allow_redirects=False
         )
         j = json_loads(r.text)
-        logging.debug(j['message'])
+        logging.debug(j)    # ['message']
     def getSuwaInfo(self, authorizationmweb):
         # https://cloud.faster.buzz/api_mweb/user/info
         pass
