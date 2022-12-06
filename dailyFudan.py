@@ -89,7 +89,8 @@ class Fudan:
                 self.url_login,
                 data=data,
                 headers=headers,
-                allow_redirects=False)
+                allow_redirects=False,
+                verify=False)
 
         logging.debug("return status code %d" % post.status_code)
 
